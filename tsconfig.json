@@ -1,0 +1,35 @@
+{
+  "compilerOptions": {
+    "target": "esnext", // node version to support
+    "module": "esnext", // determines the compiled import export statement
+
+    // HANDLING HOW TYPESCRIPT FINDS FILES USING IMPORTS
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+
+    // HANDLING RELATIVE IMPORTS AND THE BASE OF WHERE TO START
+    // looking for imported files starts at"./src"
+    "baseUrl": "./src",
+    // customize path to avoid long relative paths starting at
+    // base url
+    "paths": [],
+
+    "rootDir": "./src",
+    "outDir": "dist/",
+
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "noImplicitThis": true,
+    "alwaysStrict": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "exactOptionalPropertyTypes": false,
+    "skipLibCheck": true
+  },
+  "include": ["src/**/*", "tests/**/*"],
+  "exclude": ["node_modules", "dist"]
+}
