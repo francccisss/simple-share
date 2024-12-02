@@ -12,7 +12,9 @@ export async function uploadFile(
   filePath: string,
   fileContents: FormData.AppendOptions,
 ) {
-  const file = await fs.readFile(path.join(__dirname, "test_files", filePath));
+  const file = await fs.readFile(
+    path.join(__dirname, "../test_files", filePath),
+  );
   formData.append("file_upload", file, fileContents);
   const post = await NodeFetch("http://localhost:8081/api/upload/ses123", {
     method: "POST",
