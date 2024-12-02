@@ -3,16 +3,20 @@ import path from "path";
 import multer from "multer";
 
 const upload = multer();
-
 const router = Router();
 
 router.post(
   "/upload/:sID/",
   upload.single("file_upload"),
-  function index(req: Request, res: Response) {
+  async (req: Request, res: Response) => {
     console.log("Uploaded");
+    if (req.file == undefined) {
+      res.status(400).send(`Unable to upload file ${req.params.sID}`);
+      return;
+    }
+
     console.log(req.file);
-    res.send(`File uploaded by ${req.params.sID}`);
+    res.status(201).send(`File uploaded by ${req.params.sID}`);
   },
 );
 

@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "esnext", // node version to support
-    "module": "commonjs", // determines the compiled import export statement
+    "module": "esnext", // determines the compiled import export statement
 
     // HANDLING HOW TYPESCRIPT FINDS FILES USING IMPORTS
     "moduleResolution": "node",
@@ -31,6 +31,6 @@
     //"strictPropertyInitialization": true,
     "skipLibCheck": true
   },
-  "include": ["src/**/*", "tests/**/*"],
+  "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
 }
