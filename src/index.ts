@@ -22,12 +22,15 @@ const __dirname = dirname(__filename);
 app.use(express.static(path.join(__dirname, "public"), { index: false }));
 app.use(cookieParser(SECRET, {}));
 
-app.use(auth.checkSession, auth.createSession);
-
 // create session middleware
-app.get("/", async (req: Request, res: Response) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
-});
+app.get(
+  "/",
+  auth.checkSession,
+  auth.createSession,
+  async (req: Request, res: Response) => {
+    res.sendFile(path.join(__dirname, "public", "index.html"));
+  },
+);
 
 app.use("/api", routes);
 

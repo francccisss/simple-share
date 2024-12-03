@@ -1,23 +1,34 @@
 import express, { Request, Response, NextFunction } from "express";
 import { v4 } from "uuid";
 
-function checkSession(req: Request, res: Response, next: NextFunction) {
-  console.log(req.cookies);
-  if (req.cookies === null || req.signedCookies === null) {
-    console.log("Session does not exist: create new session");
-    next();
-    return;
+declare global {
+  namespace Express {
+    export interface Request {
+      hasSID?: boolean;
+    }
   }
-  console.log("Session exists proceed to `/`");
-  next("route");
+}
+function checkSession(req: Request, res: Response, next: NextFunction) {
+  req.hasSID = true;
+  const checkEmptyCookieJar = (cookie: { [key: string]: any }): boolean => {
+    return Object.keys(cookie).length === 0;
+  };
+  console.log(req.cookies);
+  if (checkEmptyCookieJar(req.cookies)) {
+    console.log("Session does not exist: create new session");
+    req.hasSID = false;
+  }
+  next();
 }
 function createSession(req: Request, res: Response, next: NextFunction) {
-  const sid = v4();
-  res.cookie("sid", sid, {
-    httpOnly: true,
-  });
+  if (req.hasSID === false) {
+    const sid = v4();
+    res.cookie("sid", sid, {
+      httpOnly: true,
+    });
+    console.log(`New session created with sid: ${sid}`);
+  }
   next();
-  console.log(`New session created with sid: ${sid}`);
 }
 function removeSession(req: Request, res: Response, next: NextFunction) {
   res.clearCookie("sid", { maxAge: -1 });

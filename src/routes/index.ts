@@ -9,13 +9,11 @@ router.post(
   "/upload/:sID/",
   upload.single("file_upload"),
   async (req: Request, res: Response) => {
-    console.log("Uploaded");
     if (req.file == undefined) {
       res.status(400).send(`Unable to upload file ${req.params.sID}`);
       return;
     }
 
-    console.log(req.file);
     res.status(201).send(`File uploaded by ${req.params.sID}`);
   },
 );
