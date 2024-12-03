@@ -13,9 +13,9 @@ import { fileURLToPath } from "url";
 import { deflateSync } from "zlib";
 import fs from "fs/promises";
 import cookieParser from "cookie-parser";
-import auth from "middelwares/auth";
 import utils from "utils";
 import DR from "utils/DR";
+import authentication from "middelwares/auth/authentication";
 
 const app = express();
 const PORT = process.env.PORT || 8081;
@@ -30,7 +30,7 @@ app.use(express.static(path.join(__dirname, "public"), { index: false }));
 app.use(cookieParser(SECRET, {}));
 
 // create session middleware
-app.get("/", auth.checkSession, auth.createSession);
+app.get("/", authentication.checkSession, authentication.createSession);
 
 app.get(
   "/",

@@ -13,7 +13,6 @@ router.post(
       res.status(400).send(`Unable to upload file ${req.params.sID}`);
       return;
     }
-
     res.status(201).send(`File uploaded by ${req.params.sID}`);
   },
 );

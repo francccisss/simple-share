@@ -1,4 +1,4 @@
-import { DB } from "database/database";
+import { Database } from "database/database";
 
 class DependencyRegistrar {
   services: Map<string, object>;
@@ -31,7 +31,7 @@ class DependencyRegistrar {
 const DepRegistrar = new DependencyRegistrar();
 
 // register services
-const db = new DB();
+const db = new Database();
 DepRegistrar.registerService("Database", db);
 
 export default DepRegistrar;
