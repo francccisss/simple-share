@@ -23,6 +23,4 @@ export async function uploadFile(
   if (post.status !== 201) {
     throw new Error();
   }
-  const data = await post.text();
-  console.log(data);
 }
