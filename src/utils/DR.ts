@@ -1,7 +1,7 @@
-import { DB } from "database/database";
+import { Database } from "database/database";
 
 class DependencyRegistrar {
-  services: Map<string, object>;
+  services: Map<string, Database>;
   private static instance: DependencyRegistrar | null = null;
 
   constructor() {
@@ -15,11 +15,11 @@ class DependencyRegistrar {
     return DependencyRegistrar.instance;
   }
 
-  registerService(name: string, dep: object) {
+  registerService(name: string, dep: Database) {
     this.services.set(name, dep);
   }
 
-  getService(name: string): object {
+  getService(name: string): Database {
     const service = this.services.get(name);
     if (!service) {
       throw new Error(`Dependency ${name} does not exist`);
@@ -31,7 +31,7 @@ class DependencyRegistrar {
 const DepRegistrar = new DependencyRegistrar();
 
 // register services
-const db = new DB();
+const db = new Database();
 DepRegistrar.registerService("Database", db);
 
 export default DepRegistrar;

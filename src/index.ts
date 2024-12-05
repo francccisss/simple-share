@@ -13,13 +13,27 @@ import { fileURLToPath } from "url";
 import { deflateSync } from "zlib";
 import fs from "fs/promises";
 import cookieParser from "cookie-parser";
-import auth from "middelwares/auth";
 import utils from "utils";
 import DR from "utils/DR";
+import authentication from "middelwares/auth/authentication";
+import mysql from "mysql2/promise";
+import { exit } from "process";
+import { Database } from "database/database";
+import dotenv from "dotenv";
+dotenv.config({ path: ".env" });
 
 const app = express();
 const PORT = process.env.PORT || 8081;
 const SECRET = "60dcd794-9274-4c1b-b657-d5a27b5d12f5";
+const SQLCONN = await mysql.createConnection({
+  host: "localhost",
+  user: "root",
+  password: process.env.DB_PASS,
+  database: "simple_share",
+});
+
+const db = DR.getService("Database");
+await db.connect(SQLCONN);
 
 // why is the __dirname not within the scope of esm?
 const __filename = fileURLToPath(import.meta.url);
@@ -30,7 +44,7 @@ app.use(express.static(path.join(__dirname, "public"), { index: false }));
 app.use(cookieParser(SECRET, {}));
 
 // create session middleware
-app.get("/", auth.checkSession, auth.createSession);
+app.get("/", authentication.checkSession, authentication.createSession);
 
 app.get(
   "/",

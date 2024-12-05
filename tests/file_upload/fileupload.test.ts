@@ -41,12 +41,10 @@ test("Uploading different file types images, videos, audios, text files etc...",
 
   await t.test("Upload PDF file", async () => {
     const formData = new FormData();
-    const filePath =
-      "Abraham Silberschatz, Henry Korth and S. Sudarshan - Database System Concepts. 7-McGraw-Hill Education (2020).pdf";
+    const filePath = "cats.pdf";
     try {
       uploadFile(formData, filePath, {
-        filename:
-          "Abraham Silberschatz, Henry Korth and S. Sudarshan - Database System Concepts. 7-McGraw-Hill Education (2020)",
+        filename: "Cats.pdf",
         contentType: "application/pdf",
       });
       assert.strictEqual(1, 1, "Image upload success");
