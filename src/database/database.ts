@@ -1,30 +1,23 @@
 import { Connection } from "mysql2/promise";
+import { v4 } from "uuid";
+import "../types";
 
 import { exit } from "process";
+import { user } from "../types";
 
 export class Database {
-  private session: Connection | null = null;
-  constructor() {}
+  session: Connection;
+  constructor(sqlConn: Connection) {
+    this.session = sqlConn;
+  }
 
-  async connect(sqlConn: Connection) {
+  async connect() {
     try {
-      //await sqlConn.connect();
-      this.session = sqlConn;
-      // A simple SELECT query
-      try {
-        const [results, fields] = await this.session.query(
-          "SELECT * FROM user WHERE status = 1;",
-        );
-
-        console.log(results); // results contains rows returned by server
-        console.log(fields); // fields contains extra meta data about results, if available
-      } catch (err) {
-        console.log(err);
-      }
-      this.session.end();
+      this.session.connect();
     } catch (err) {
       const error = err as Error;
       console.error("Unable to connect to the mysql server");
+      console.error(err);
       console.error("Exiting application");
       exit();
     }
@@ -32,7 +25,16 @@ export class Database {
   async disconnect() {}
 
   // executes script
-  async exec(script: string) {}
+  async exec(stmt: string, values?: any | Array<any>) {
+    try {
+      const [results, fields] = await this.session.query(stmt, values);
+      console.log(results);
+      console.log(fields);
+    } catch (err) {
+      console.error(err);
+      console.error("Unable execute query");
+    }
+  }
 }
 
 export class Files {
@@ -41,7 +43,9 @@ export class Files {
     this.db = db;
   }
 
-  async insert(file: any, user: string) {}
+  async insert(file: any, user: string) {
+    this.db.session.query("");
+  }
   async get(file: any, user: string) {}
   async delete(file: any, user: string) {
     this.db.exec(`DELETE FROM FILES WHERE f.id = ${file.id}`);
@@ -54,7 +58,14 @@ export class Users {
   constructor(db: Database) {
     this.db = db;
   }
-  async insertUserSession() {}
+  async insertUserSession(): Promise<string> {
+    const newSessionId = v4();
+    await this.db.exec(
+      "INSERT into user (sessionID, status, userTimeout, fileSizeContained) values (?, ?, ?, ?);",
+      [newSessionId, 0, 0, 0],
+    );
+    return newSessionId;
+  }
   async updateUserSession() {}
   async deleteUserSession(user: string) {
     this.db.exec(`DELETE users FILES WHERE f.id = ${user}`);

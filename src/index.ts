@@ -18,8 +18,9 @@ import DR from "utils/DR";
 import authentication from "middelwares/auth/authentication";
 import mysql from "mysql2/promise";
 import { exit } from "process";
-import { Database } from "database/database";
+import { Database, Files, Users } from "database/database";
 import dotenv from "dotenv";
+import DepRegistrar from "utils/DR";
 dotenv.config({ path: ".env" });
 
 const app = express();
@@ -32,8 +33,12 @@ const SQLCONN = await mysql.createConnection({
   database: "simple_share",
 });
 
-const db = DR.getService("Database");
-await db.connect(SQLCONN);
+DepRegistrar.registerService("Database", new Database(SQLCONN));
+const DB = DR.getService("Database");
+
+DepRegistrar.registerService("File", new Files(DB));
+DepRegistrar.registerService("Users", new Users(DB));
+console.log(DepRegistrar.getService("Users"));
 
 // why is the __dirname not within the scope of esm?
 const __filename = fileURLToPath(import.meta.url);
@@ -50,7 +55,6 @@ app.get(
   "/",
   (req: Request, res: Response, next: NextFunction) => {
     try {
-      console.log(DR.getService("Database"));
       console.log("Check database when user session exists from client");
       next();
     } catch (err) {
