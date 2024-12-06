@@ -16,7 +16,6 @@ test("Testing sesssion operations for users", async (t) => {
         fail("Failed to pass in a cookie session");
       }
       cookie = r.headers.get("set-cookie")!;
-      console.log(cookie);
     } catch (err) {
       fail("Unable to create session");
     }

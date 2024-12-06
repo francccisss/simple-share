@@ -20,6 +20,10 @@ async function checkSession(req: Request, res: Response, next: NextFunction) {
     next(); // createSession middleware called
     return;
   }
+  // check if current sid actually exists in the database if ever it is present in the client browser cookie
+  const users: Users = DepRegistrar.getService("Users");
+  const user = await users.checkUserExists(req.cookies.sid);
+  console.log(user);
   next("route"); // move to database check route handler
 }
 async function createSession(req: Request, res: Response, next: NextFunction) {

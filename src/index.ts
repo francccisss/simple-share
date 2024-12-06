@@ -38,7 +38,6 @@ const DB = DR.getService("Database");
 
 DepRegistrar.registerService("File", new Files(DB));
 DepRegistrar.registerService("Users", new Users(DB));
-console.log(DepRegistrar.getService("Users"));
 
 // why is the __dirname not within the scope of esm?
 const __filename = fileURLToPath(import.meta.url);
