@@ -21,6 +21,7 @@ import { exit } from "process";
 import { Database, Files, Users } from "database/database";
 import dotenv from "dotenv";
 import DepRegistrar from "utils/DR";
+import { v4 } from "uuid";
 dotenv.config({ path: ".env" });
 
 const app = express();
@@ -52,14 +53,8 @@ app.get("/", authentication.checkSession, authentication.createSession);
 
 app.get(
   "/",
-  (req: Request, res: Response, next: NextFunction) => {
-    try {
-      console.log("Check database when user session exists from client");
-      next();
-    } catch (err) {
-      next(err);
-    }
-  },
+  // renews session if sid exists on client but not on database.
+  authentication.renewSession,
   async (req: Request, res: Response) => {
     res.sendFile(path.join(__dirname, "public", "index.html"));
   },

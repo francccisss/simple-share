@@ -30,13 +30,9 @@ export class Database {
     values?: any | Array<any>,
   ): Promise<any | undefined> {
     try {
-      const results = await this.session.query(stmt, values);
-      console.log(results[0]);
-      console.log(results[1]);
-      if (results === undefined) {
-        throw new Error("");
-      }
-      return results[0];
+      const [results, fields] = await this.session.query(stmt, values);
+      console.log({ results, fields });
+      return results;
     } catch (err) {
       console.error(err);
       console.error("Unable execute query");
@@ -59,14 +55,37 @@ export class Users {
     return newSessionId;
   }
   async checkUserExists(sessionID: string): Promise<boolean> {
-    const result = await this.db.exec(
+    const results = await this.db.exec(
       `select * from user where sessionID = ?;`,
       sessionID,
     );
-    console.log(result);
-    return result.length != 0;
+    console.log("Existing user with id", results[0].sessionID);
+    return results.length != 0;
   }
-  async updateUserSession() {}
+  async updateUserSession(
+    sid: string,
+    updates: {
+      sessionID?: string;
+      status?: 0 | 1;
+      userTimeout?: number;
+      fileSizeContained?: number;
+    },
+  ) {
+    console.log(
+      `update user set ${this.compoundUpdates(updates)} where sessionID = ${sid}`,
+    );
+    const update = await this.db.exec(
+      `update user set ${this.compoundUpdates(updates)} where sessionID = ?`,
+      [sid],
+    );
+    console.log(update);
+  }
+  private compoundUpdates(updates: { [key: string]: any }) {
+    const setUpdate = Object.entries(updates).map((entry) => {
+      return `${entry[0]} = ${entry[1]}`;
+    });
+    return setUpdate;
+  }
   async deleteUserSession(user: string) {
     this.db.exec(`DELETE users FILES WHERE f.id = ${user}`);
   }

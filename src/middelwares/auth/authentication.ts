@@ -20,11 +20,7 @@ async function checkSession(req: Request, res: Response, next: NextFunction) {
     next(); // createSession middleware called
     return;
   }
-  // check if current sid actually exists in the database if ever it is present in the client browser cookie
-  const users: Users = DepRegistrar.getService("Users");
-  const user = await users.checkUserExists(req.cookies.sid);
-  console.log(user);
-  next("route"); // move to database check route handler
+  next("route");
 }
 async function createSession(req: Request, res: Response, next: NextFunction) {
   // save to user with session to db
@@ -44,4 +40,27 @@ async function removeSession(req: Request, res: Response, next: NextFunction) {
   res.status(200).send("Session cleared");
 }
 
-export default { checkSession, createSession, removeSession };
+async function renewSession(req: Request, res: Response, next: NextFunction) {
+  try {
+    const clientSid = req.cookies.sid;
+    const users: Users = DepRegistrar.getService("Users");
+    const exists = await users.checkUserExists(clientSid);
+    console.log(exists);
+
+    if (!exists) {
+      console.log(
+        "Current user has an sid but does not exist in the database: renewing session",
+      );
+      const sid = await users.insertUserSession();
+      res.cookie("sid", sid, {
+        httpOnly: true,
+      });
+      console.log("Session renewed");
+    }
+    next();
+  } catch (err) {
+    next(err);
+  }
+}
+
+export default { checkSession, createSession, removeSession, renewSession };
