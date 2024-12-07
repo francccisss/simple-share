@@ -1,6 +1,6 @@
 import { Users } from "database/database";
 import express, { Request, Response, NextFunction } from "express";
-import DepRegistrar from "utils/DR";
+import dr from "utils/dependency_registrar";
 import { v4 } from "uuid";
 
 declare global {
@@ -12,10 +12,7 @@ declare global {
 }
 
 async function checkSession(req: Request, res: Response, next: NextFunction) {
-  const isCookieEmpty = (cookie: { [key: string]: any }): boolean => {
-    return Object.keys(cookie).length === 0;
-  };
-  if (isCookieEmpty(req.cookies) === true) {
+  if (req.cookies.sid === undefined) {
     console.log("Session does not exist: create new session");
     next(); // createSession middleware called
     return;
@@ -25,7 +22,7 @@ async function checkSession(req: Request, res: Response, next: NextFunction) {
 async function createSession(req: Request, res: Response, next: NextFunction) {
   // save to user with session to db
 
-  const users: Users = DepRegistrar.getService("Users");
+  const users: Users = dr.getService("Users");
   try {
     const sid = await users.insertUserSession();
     res.cookie("sid", sid, {
@@ -46,7 +43,7 @@ async function removeSession(req: Request, res: Response, next: NextFunction) {
 async function renewSession(req: Request, res: Response, next: NextFunction) {
   try {
     const clientSid = req.cookies.sid;
-    const users: Users = DepRegistrar.getService("Users");
+    const users: Users = dr.getService("Users");
     const user = await users.getUserSession(clientSid);
     console.log(user);
 

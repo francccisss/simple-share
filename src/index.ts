@@ -4,23 +4,17 @@ import express, {
   Response,
   ErrorRequestHandler,
 } from "express";
-import { Http2Server } from "http2";
 import routes from "./routes";
 import http from "http";
-import { networkInterfaces } from "os";
 import path, { dirname } from "path";
 import { fileURLToPath } from "url";
-import { deflateSync } from "zlib";
 import fs from "fs/promises";
 import cookieParser from "cookie-parser";
-import utils from "utils";
-import DR from "utils/DR";
 import authentication from "middelwares/auth/authentication";
 import mysql from "mysql2/promise";
-import { exit } from "process";
 import { Database, Files, Users } from "database/database";
 import dotenv from "dotenv";
-import DepRegistrar from "utils/DR";
+import dr from "utils/dependency_registrar";
 import { v4 } from "uuid";
 dotenv.config({ path: ".env" });
 
@@ -34,11 +28,11 @@ const SQLCONN = await mysql.createConnection({
   database: "simple_share",
 });
 
-DepRegistrar.registerService("Database", new Database(SQLCONN));
-const DB = DR.getService("Database");
+dr.registerService("Database", new Database(SQLCONN));
+const DB = dr.getService("Database");
 
-DepRegistrar.registerService("File", new Files(DB));
-DepRegistrar.registerService("Users", new Users(DB));
+dr.registerService("File", new Files(DB));
+dr.registerService("Users", new Users(DB));
 
 // why is the __dirname not within the scope of esm?
 const __filename = fileURLToPath(import.meta.url);
@@ -62,7 +56,8 @@ app.get(
 
 app.use("/api", routes);
 
-app.use((err: any, req: Request, res: Response) => {
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+  console.log("DIPOTA");
   console.log(err.message);
   res.status(400).send(err.message);
 });
