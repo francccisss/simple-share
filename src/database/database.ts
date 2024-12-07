@@ -25,10 +25,7 @@ export class Database {
   async disconnect() {}
 
   // executes script
-  async exec(
-    stmt: string,
-    values?: any | Array<any>,
-  ): Promise<any | undefined> {
+  async exec(stmt: string, values?: any | Array<any>): Promise<any> {
     try {
       const [results, fields] = await this.session.query(stmt, values);
       console.log({ results, fields });
@@ -48,13 +45,21 @@ export class Users {
   }
   async insertUserSession(): Promise<string> {
     const newSessionId = v4();
-    await this.db.exec(
-      "INSERT into user (sessionID, status, userTimeout, fileSizeContained) values (?, ?, ?, ?);",
-      [newSessionId, 0, 0, 0],
-    );
-    return newSessionId;
+    try {
+      const results = await this.db.exec(
+        "INSERT into user (sessionID, status, userTimeout, fileSizeContained) values (?, ?, ?, ?);",
+        [newSessionId, 0, 0, 0],
+      );
+      if (results.length == 0) {
+        throw new Error("Unable to insert a new session");
+      }
+      return newSessionId;
+    } catch (err) {
+      console.error(err);
+      return "";
+    }
   }
-  async checkUserExists(sessionID: string): Promise<boolean> {
+  async getUserSession(sessionID: string): Promise<boolean> {
     const results = await this.db.exec(
       `select * from user where sessionID = ?;`,
       sessionID,
@@ -78,16 +83,20 @@ export class Users {
       `update user set ${this.compoundUpdates(updates)} where sessionID = ?`,
       [sid],
     );
-    console.log(update);
+    console.log("Successfully updated:", sid);
+    console.log({ update });
   }
   private compoundUpdates(updates: { [key: string]: any }) {
-    const setUpdate = Object.entries(updates).map((entry) => {
-      return `${entry[0]} = ${entry[1]}`;
+    const setUpdate = Object.entries(updates).map(([key, value], i) => {
+      const property = `${key} = ${value}`;
+      return i === Object.entries(updates).length
+        ? property
+        : property.concat(",");
     });
     return setUpdate;
   }
-  async deleteUserSession(user: string) {
-    this.db.exec(`DELETE users FILES WHERE f.id = ${user}`);
+  async deleteUserSession(sid: string) {
+    this.db.exec(`DELETE users FILES WHERE id = ${sid}`);
   }
 }
 

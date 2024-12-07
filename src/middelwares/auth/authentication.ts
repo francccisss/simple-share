@@ -26,13 +26,16 @@ async function createSession(req: Request, res: Response, next: NextFunction) {
   // save to user with session to db
 
   const users: Users = DepRegistrar.getService("Users");
-  const sid = await users.insertUserSession();
-  res.cookie("sid", sid, {
-    httpOnly: true,
-  });
-
-  console.log(`New session created with sid: ${sid}`);
-  next();
+  try {
+    const sid = await users.insertUserSession();
+    res.cookie("sid", sid, {
+      httpOnly: true,
+    });
+    console.log(`New session created with sid: ${sid}`);
+    next();
+  } catch (err) {
+    next(err);
+  }
 }
 async function removeSession(req: Request, res: Response, next: NextFunction) {
   res.clearCookie("sid", { maxAge: -1 });
@@ -44,10 +47,10 @@ async function renewSession(req: Request, res: Response, next: NextFunction) {
   try {
     const clientSid = req.cookies.sid;
     const users: Users = DepRegistrar.getService("Users");
-    const exists = await users.checkUserExists(clientSid);
-    console.log(exists);
+    const user = await users.getUserSession(clientSid);
+    console.log(user);
 
-    if (!exists) {
+    if (!user) {
       console.log(
         "Current user has an sid but does not exist in the database: renewing session",
       );
