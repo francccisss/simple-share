@@ -47,7 +47,7 @@ export class Users {
   async insertUserSession(): Promise<string> {
     const newSessionId = v4();
     const results = await this.db.exec(
-      "INSERT into user (sessionID, status, userTimeout, fileSizeContained) values (?, ?, ?, ?);",
+      "insert into user (sessionID, status, userTimeout, fileSizeContained) values (?, ?, ?, ?);",
       [newSessionId, 1, 0, 0],
     );
     if (results.length == 0) {
@@ -101,8 +101,15 @@ export class Files {
     this.db = db;
   }
 
-  async insert(file: any, user: string) {
-    this.db.session.query("");
+  async insert(file: Buffer, sid: string) {
+    const results = await this.db.exec(
+      "insert into file (expiration, ownerID, fileBuffer) values (? ? ?);",
+      [0, sid, file],
+    );
+    if (results.length == 0) {
+      throw new Error("Unable to insert a new file for user: " + sid);
+    }
+    console.log("Successfully inserted new file for user: ", sid);
   }
   async get(file: any, user: string) {}
   async delete(file: any, user: string) {

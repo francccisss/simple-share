@@ -9,6 +9,6 @@ export type user = {
 
 export type file = {
   expiration: number | string;
-  ownerId: string;
-  fileBuffer: ArrayBufferLike;
+  ownerID: string;
+  fileBuffer: Buffer;
 };

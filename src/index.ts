@@ -31,7 +31,7 @@ const SQLCONN = await mysql.createConnection({
 dr.registerService("Database", new Database(SQLCONN));
 const DB = dr.getService("Database");
 
-dr.registerService("File", new Files(DB));
+dr.registerService("Files", new Files(DB));
 dr.registerService("Users", new Users(DB));
 
 // why is the __dirname not within the scope of esm?
