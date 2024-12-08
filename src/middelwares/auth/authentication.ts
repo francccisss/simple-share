@@ -12,10 +12,26 @@ declare global {
 }
 
 async function checkSession(req: Request, res: Response, next: NextFunction) {
-  if (req.cookies.sid === undefined) {
+  const clientSid = req.cookies.sid;
+  if (clientSid === undefined) {
     console.log("Session does not exist: create new session");
     next(); // createSession middleware called
     return;
+  }
+  const users: Users = dr.getService("Users");
+  const user = await users.checkUserSession(clientSid);
+  console.log({ userexists: user });
+
+  // check IP??
+  if (!user) {
+    console.log(
+      "Current user has an sid but does not exist in the database: renewing session",
+    );
+    const sid = await users.insertUserSession();
+    res.cookie("sid", sid, {
+      httpOnly: true,
+    });
+    console.log("Session renewed");
   }
   next("route");
 }
@@ -25,7 +41,7 @@ async function createSession(req: Request, res: Response, next: NextFunction) {
   const users: Users = dr.getService("Users");
   try {
     const sid = await users.insertUserSession();
-    res.cookie("sid", sid, {
+    res.cookie("sid", "", {
       httpOnly: true,
     });
     console.log(`New session created with sid: ${sid}`);
@@ -40,27 +56,4 @@ async function removeSession(req: Request, res: Response, next: NextFunction) {
   res.status(200).send("Session cleared");
 }
 
-async function renewSession(req: Request, res: Response, next: NextFunction) {
-  try {
-    const clientSid = req.cookies.sid;
-    const users: Users = dr.getService("Users");
-    const user = await users.getUserSession(clientSid);
-    console.log(user);
-
-    if (!user) {
-      console.log(
-        "Current user has an sid but does not exist in the database: renewing session",
-      );
-      const sid = await users.insertUserSession();
-      res.cookie("sid", sid, {
-        httpOnly: true,
-      });
-      console.log("Session renewed");
-    }
-    next();
-  } catch (err) {
-    next(err);
-  }
-}
-
-export default { checkSession, createSession, removeSession, renewSession };
+export default { checkSession, createSession, removeSession };

@@ -45,14 +45,9 @@ app.use(cookieParser(SECRET, {}));
 // create session middleware
 app.get("/", authentication.checkSession, authentication.createSession);
 
-app.get(
-  "/",
-  // renews session if sid exists on client but not on database.
-  authentication.renewSession,
-  async (req: Request, res: Response) => {
-    res.sendFile(path.join(__dirname, "public", "index.html"));
-  },
-);
+app.get("/", async (req: Request, res: Response) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
 
 app.use("/api", routes);
 

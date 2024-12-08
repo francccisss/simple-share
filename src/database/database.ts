@@ -47,7 +47,7 @@ export class Users {
   async insertUserSession(): Promise<string> {
     const newSessionId = v4();
     const results = await this.db.exec(
-      "insert into user (sessionID, status, userTimeout, fileSizeContained) values (?, ?, ?, ?);",
+      "insert into user (sessionID, status, userTimeout, fileSizeContained) values (?, ?, ?, ?)",
       [newSessionId, 1, 0, 0],
     );
     if (results.length == 0) {
@@ -55,9 +55,9 @@ export class Users {
     }
     return newSessionId;
   }
-  async getUserSession(sessionID: string): Promise<boolean> {
+  async checkUserSession(sessionID: string): Promise<boolean> {
     const results = await this.db.exec(
-      `select * from user where sessionID = ?;`,
+      `select sessionID from user where sessionID = ?`,
       sessionID,
     );
     console.log("Existing user with id", results[0].sessionID);
@@ -106,6 +106,7 @@ export class Files {
       "insert into file (expiration, ownerID, fileBuffer) values (? ? ?);",
       [0, sid, file],
     );
+    console.log(sid);
     if (results.length == 0) {
       throw new Error("Unable to insert a new file for user: " + sid);
     }
