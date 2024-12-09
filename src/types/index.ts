@@ -11,4 +11,5 @@ export type file = {
   expiration: number | string;
   ownerID: string;
   fileBuffer: Buffer;
+  fileID: string;
 };

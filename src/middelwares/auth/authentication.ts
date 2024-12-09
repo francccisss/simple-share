@@ -12,38 +12,33 @@ declare global {
 }
 
 async function checkSession(req: Request, res: Response, next: NextFunction) {
-  const clientSid = req.cookies.sid;
-  if (clientSid === undefined) {
+  const sid = req.cookies.sid;
+  console.log("Checking user session");
+  if (sid === undefined) {
     console.log("Session does not exist: create new session");
     next(); // createSession middleware called
     return;
   }
   const users: Users = dr.getService("Users");
-  const user = await users.checkUserSession(clientSid);
+  const user = await users.checkUserSession(sid);
   console.log({ userexists: user });
-
   // check IP??
   if (!user) {
-    console.log(
-      "Current user has an sid but does not exist in the database: renewing session",
-    );
+    console.log("User sessionID is invalid, creating new session...");
+    console.log("Renewing session");
+    next(); // createSession middleware called
+  }
+  console.log("User session valid");
+  next("route");
+}
+async function createSession(req: Request, res: Response, next: NextFunction) {
+  const users: Users = dr.getService("Users");
+  try {
     const sid = await users.insertUserSession();
     res.cookie("sid", sid, {
       httpOnly: true,
     });
-    console.log("Session renewed");
-  }
-  next("route");
-}
-async function createSession(req: Request, res: Response, next: NextFunction) {
-  // save to user with session to db
-
-  const users: Users = dr.getService("Users");
-  try {
-    const sid = await users.insertUserSession();
-    res.cookie("sid", "", {
-      httpOnly: true,
-    });
+    req.cookies.sid = sid; // update sid for the next route handler
     console.log(`New session created with sid: ${sid}`);
     next();
   } catch (err) {

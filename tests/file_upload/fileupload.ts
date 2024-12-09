@@ -16,7 +16,7 @@ export async function uploadFile(
     path.join(__dirname, "../test_files", filePath),
   );
   formData.append("file_upload", file, fileContents);
-  const post = await NodeFetch("http://localhost:8080/api/upload/ses123", {
+  const post = await NodeFetch("http://localhost:8081/api/upload", {
     method: "POST",
     body: formData,
   });

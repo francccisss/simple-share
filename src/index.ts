@@ -43,7 +43,7 @@ app.use(express.static(path.join(__dirname, "public"), { index: false }));
 app.use(cookieParser(SECRET, {}));
 
 // create session middleware
-app.get("/", authentication.checkSession, authentication.createSession);
+app.all("*", authentication.checkSession, authentication.createSession);
 
 app.get("/", async (req: Request, res: Response) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));

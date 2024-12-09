@@ -3,7 +3,7 @@ import { v4 } from "uuid";
 import "../types";
 
 import { exit } from "process";
-import { user } from "../types";
+import { file, user } from "../types";
 
 export class Database {
   session: Connection;
@@ -60,7 +60,6 @@ export class Users {
       `select sessionID from user where sessionID = ?`,
       sessionID,
     );
-    console.log("Existing user with id", results[0].sessionID);
     return results.length != 0;
   }
   async updateUserSession(
@@ -101,18 +100,42 @@ export class Files {
     this.db = db;
   }
 
-  async insert(file: Buffer, sid: string) {
+  // string as binary string
+  async insertFile(file: Blob, sid: string): Promise<string> {
+    const fileBuffer = Buffer.from(await file.arrayBuffer());
+    const fileID = v4();
     const results = await this.db.exec(
-      "insert into file (expiration, ownerID, fileBuffer) values (? ? ?);",
-      [0, sid, file],
+      "insert into file (expiration, ownerID, fileBuffer, fileID) values (?, ?, ?, ?)",
+      [0, sid, fileBuffer, fileID],
     );
-    console.log(sid);
-    if (results.length == 0) {
+    if (results.length == 0)
       throw new Error("Unable to insert a new file for user: " + sid);
-    }
+
     console.log("Successfully inserted new file for user: ", sid);
+    return fileID;
   }
-  async get(file: any, user: string) {}
+  async getFile(sid: string, fileID: string): Promise<file> {
+    const results = await this.db.exec(
+      "select * from file where fileID = ? and ownerID = ?",
+      [fileID, sid],
+    );
+    if (results.length == 0)
+      throw new Error("Unable to query file with ownerID of " + sid);
+
+    console.log("Successfully queuried file for user: ", sid);
+    return results[0];
+  }
+
+  async getFiles(file: any, sid: string): Promise<Array<file>> {
+    const results = await this.db.exec("select * from file where ownerID = ?", [
+      sid,
+    ]);
+    if (results.length == 0)
+      throw new Error("Unable to query file collection with ownerID of " + sid);
+
+    console.log("Successfully queuried file collection for user: ", sid);
+    return results;
+  }
   async delete(file: any, user: string) {
     this.db.exec(`DELETE FROM FILES WHERE f.id = ${file.id}`);
   }
