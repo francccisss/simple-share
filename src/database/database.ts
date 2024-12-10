@@ -64,16 +64,32 @@ export class Users {
   }
   async updateUserSession(
     sid: string,
-    updates: {
-      sessionID?: string;
-      status?: 0 | 1;
-      userTimeout?: number;
-      fileSizeContained?: number;
-    },
+    updates:
+      | {
+          sessionID?: string;
+          status?: 0 | 1;
+          userTimeout?: number;
+          fileSizeContained?: number;
+        }
+      | ((currentState: user) => {
+          sessionID?: string;
+          status?: 0 | 1;
+          userTimeout?: number;
+          fileSizeContained?: number;
+        }),
   ) {
-    console.log(
-      `update user set ${this.compoundUpdates(updates)} where sessionID = ${sid}`,
-    );
+    // STRING INTERPOLATION IS NOT SAFE DAW
+    if (typeof updates === "function") {
+      console.log("updates argument is type of function");
+      const results: Array<user> = await this.db.exec(
+        `select * from user where sessionID = ?`,
+        [sid],
+      );
+      if (results.length === 0) {
+        throw new Error("Unable to get current user state to be updated");
+      }
+      updates = updates(results[0]);
+    }
     const update = await this.db.exec(
       `update user set ${this.compoundUpdates(updates)} where sessionID = ?`,
       [sid],
