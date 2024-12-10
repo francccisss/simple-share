@@ -4,13 +4,13 @@ import express, {
   Response,
   ErrorRequestHandler,
 } from "express";
-import routes from "./routes";
+import api from "./api";
 import http from "http";
 import path, { dirname } from "path";
 import { fileURLToPath } from "url";
 import fs from "fs/promises";
 import cookieParser from "cookie-parser";
-import authentication from "middelwares/auth/authentication";
+import auth from "middelwares/auth";
 import mysql from "mysql2/promise";
 import { Database, Files, Users } from "database/database";
 import dotenv from "dotenv";
@@ -43,13 +43,13 @@ app.use(express.static(path.join(__dirname, "public"), { index: false }));
 app.use(cookieParser(SECRET, {}));
 
 // create session middleware
-app.all("*", authentication.checkSession, authentication.createSession);
+app.all("*", auth.checkSession, auth.createSession);
 
 app.get("/", async (req: Request, res: Response) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-app.use("/api", routes);
+app.use("/api", api);
 
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   console.log("DIPOTA");

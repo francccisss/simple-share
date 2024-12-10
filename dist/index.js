@@ -1,27 +1,28 @@
 import express from "express";
-import routes from "./routes";
+import api from "./api";
 import http from "http";
 import path, { dirname } from "path";
 import { fileURLToPath } from "url";
 import cookieParser from "cookie-parser";
-import DR from "utils/DR";
 import authentication from "middelwares/auth/authentication";
-import mysql from "mysql";
-import { exit } from "process";
+import mysql from "mysql2/promise";
+import { Database, Files, Users } from "database/database";
+import dotenv from "dotenv";
+import dr from "utils/dependency_registrar";
+dotenv.config({ path: ".env" });
 const app = express();
 const PORT = process.env.PORT || 8081;
 const SECRET = "60dcd794-9274-4c1b-b657-d5a27b5d12f5";
-const SQLCONN = mysql.createConnection({
+const SQLCONN = await mysql.createConnection({
     host: "localhost",
     user: "root",
-    password: "Mosqueda1",
+    password: process.env.DB_PASS,
     database: "simple_share",
 });
-if (SQLCONN.state !== "connected" && SQLCONN.state !== "authenticated") {
-    console.error("Unable to connect to the mysql server");
-    console.error("Exiting application");
-    exit();
-}
+dr.registerService("Database", new Database(SQLCONN));
+const DB = dr.getService("Database");
+dr.registerService("Files", new Files(DB));
+dr.registerService("Users", new Users(DB));
 // why is the __dirname not within the scope of esm?
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -29,21 +30,13 @@ const __dirname = dirname(__filename);
 app.use(express.static(path.join(__dirname, "public"), { index: false }));
 app.use(cookieParser(SECRET, {}));
 // create session middleware
-app.get("/", authentication.checkSession, authentication.createSession);
-app.get("/", (req, res, next) => {
-    try {
-        console.log(DR.getService("Database"));
-        console.log("Check database when user session exists from client");
-        next();
-    }
-    catch (err) {
-        next(err);
-    }
-}, async (req, res) => {
+app.all("*", authentication.checkSession, authentication.createSession);
+app.get("/", async (req, res) => {
     res.sendFile(path.join(__dirname, "public", "index.html"));
 });
-app.use("/api", routes);
-app.use((err, req, res) => {
+app.use("/api", api);
+app.use((err, req, res, next) => {
+    console.log("DIPOTA");
     console.log(err.message);
     res.status(400).send(err.message);
 });

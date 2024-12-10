@@ -101,12 +101,11 @@ export class Files {
   }
 
   // string as binary string
-  async insertFile(file: Blob, sid: string): Promise<string> {
-    const fileBuffer = Buffer.from(await file.arrayBuffer());
+  async insertFile(file: Buffer, sid: string): Promise<string> {
     const fileID = v4();
     const results = await this.db.exec(
       "insert into file (expiration, ownerID, fileBuffer, fileID) values (?, ?, ?, ?)",
-      [0, sid, fileBuffer, fileID],
+      [0, sid, file, fileID],
     );
     if (results.length == 0)
       throw new Error("Unable to insert a new file for user: " + sid);
