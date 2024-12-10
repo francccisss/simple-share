@@ -12,6 +12,12 @@ declare global {
 }
 
 async function checkSession(req: Request, res: Response, next: NextFunction) {
+  // skip the session check
+  if (req.url.includes("/api/share")) {
+    console.log("Sharing is caring");
+    return next("route");
+  }
+
   const sid = req.cookies.sid;
   console.log("Checking user session");
   if (sid === undefined) {

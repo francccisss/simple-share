@@ -129,15 +129,15 @@ export class Files {
     console.log("Successfully inserted new file for user: ", sid);
     return fileID;
   }
-  async getFile(sid: string, fileID: string): Promise<file> {
-    const results = await this.db.exec(
-      "select * from file where fileID = ? and ownerID = ?",
-      [fileID, sid],
+  async getFile(fileID: string): Promise<file> {
+    const results: Array<file> = await this.db.exec(
+      "select * from file where fileID = ?",
+      [fileID],
     );
     if (results.length == 0)
-      throw new Error("Unable to query file with ownerID of " + sid);
+      throw new Error("Unable to query file with id of " + fileID);
 
-    console.log("Successfully queuried file for user: ", sid);
+    console.log("Successfully queuried file ", fileID);
     return results[0];
   }
 
