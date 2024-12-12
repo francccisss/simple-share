@@ -33,6 +33,7 @@ async function checkSession(req: Request, res: Response, next: NextFunction) {
     console.log("User sessionID is invalid, creating new session...");
     console.log("Renewing session");
     next(); // createSession middleware called
+    return;
   }
   console.log("User session valid");
   next("route");
@@ -41,11 +42,14 @@ async function createSession(req: Request, res: Response, next: NextFunction) {
   const users: Users = dr.getService("Users");
   try {
     const sid = await users.insertUserSession();
+    console.log({ newID: sid });
+    req.cookies.sid = sid; // update sid for the next route handler
+    console.log(`New session created with sid: ${sid}`);
+
     res.cookie("sid", sid, {
       httpOnly: true,
     });
-    req.cookies.sid = sid; // update sid for the next route handler
-    console.log(`New session created with sid: ${sid}`);
+
     next();
   } catch (err) {
     next(err);
