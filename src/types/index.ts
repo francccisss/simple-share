@@ -8,7 +8,7 @@ export type user = {
 };
 
 export type file = {
-  expiration: number | string;
+  expiration: Date;
   ownerID: string;
   fileBuffer: Buffer;
   fileID: string;

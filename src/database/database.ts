@@ -5,6 +5,22 @@ import "../types";
 import { exit } from "process";
 import { file, user } from "../types";
 
+// TODO try catch sql statements
+
+type userUpdaterFn = (currentState: user) => {
+  sessionID?: string;
+  status?: 0 | 1;
+  userTimeout?: number;
+  fileSizeContained?: number;
+};
+
+type userUpdateOption = {
+  sessionID?: string;
+  status?: 0 | 1;
+  userTimeout?: number;
+  fileSizeContained?: number;
+};
+
 export class Database {
   session: Connection;
   constructor(sqlConn: Connection) {
@@ -64,41 +80,34 @@ export class Users {
   }
   async updateUserSession(
     sid: string,
-    updates:
-      | {
-          sessionID?: string;
-          status?: 0 | 1;
-          userTimeout?: number;
-          fileSizeContained?: number;
-        }
-      | ((currentState: user) => {
-          sessionID?: string;
-          status?: 0 | 1;
-          userTimeout?: number;
-          fileSizeContained?: number;
-        }),
+    updates: userUpdateOption | userUpdaterFn,
   ) {
     // STRING INTERPOLATION IS NOT SAFE DAW
-    if (typeof updates === "function") {
-      console.log("updates argument is type of function");
-      const results: Array<user> = await this.db.exec(
-        `select * from user where sessionID = ?`,
+    try {
+      if (typeof updates === "function") {
+        console.log("updates argument is type of function");
+        const results: Array<user> = await this.db.exec(
+          `select * from user where sessionID = ?`,
+          [sid],
+        );
+        if (results.length === 0) {
+          throw new Error("User does not exist");
+        }
+        updates = updates(results[0]);
+      }
+      const update = await this.db.exec(
+        `update user set ${this.compoundUpdates(updates)} where sessionID = ?`,
         [sid],
       );
-      if (results.length === 0) {
-        throw new Error("Unable to get current user state to be updated");
+      if (update.length == 0) {
+        throw new Error("Unable to update user: " + sid);
       }
-      updates = updates(results[0]);
+      console.log("Successfully updated:", sid);
+      console.log({ update });
+    } catch (err) {
+      const error = err as Error;
+      throw new Error(error.message);
     }
-    const update = await this.db.exec(
-      `update user set ${this.compoundUpdates(updates)} where sessionID = ?`,
-      [sid],
-    );
-    if (update.length == 0) {
-      throw new Error("Unable to update user: " + sid);
-    }
-    console.log("Successfully updated:", sid);
-    console.log({ update });
   }
   private compoundUpdates(updates: { [key: string]: any }) {
     return Object.entries(updates)
@@ -119,9 +128,13 @@ export class Files {
   // string as binary string
   async insertFile(file: Buffer, sid: string): Promise<string> {
     const fileID = v4();
+    const expirationDate = new Date();
+    console.log({ expirationDate });
+    expirationDate.setSeconds(10);
+    console.log("expiration date set to 10 seconds");
     const results = await this.db.exec(
       "insert into file (expiration, ownerID, fileBuffer, fileID) values (?, ?, ?, ?)",
-      [0, sid, file, fileID],
+      [expirationDate, sid, file, fileID],
     );
     if (results.length == 0)
       throw new Error("Unable to insert a new file for user: " + sid);
@@ -151,8 +164,53 @@ export class Files {
     console.log("Successfully queuried file collection for user: ", sid);
     return results;
   }
-  async delete(file: any, user: string) {
-    this.db.exec(`DELETE FROM FILES WHERE f.id = ${file.id}`);
+
+  async clearExpiredFiles(users: Users) {
+    try {
+      const currentDate = new Date();
+      const usersExpiredFiles =
+        await this.calculateExpiredFileSizes(currentDate);
+      const updateUsers = usersExpiredFiles.map((file) => {
+        return users.updateUserSession.bind(users)(file.ownerID, (user) => ({
+          fileSizeContained: user.fileSizeContained - file.totalBytes,
+        }));
+      });
+      await Promise.all([
+        ...updateUsers,
+        this.db.exec("DELETE FROM file WHERE expiration <= ?", currentDate),
+      ]);
+      console.log("Expired files removed");
+    } catch (err) {
+      const error = err as Error;
+      console.warn(error);
+      throw new Error(error.message);
+    }
   }
-  async clearRelatedItems() {}
+
+  /*
+   * Calculates total size of an expired file which is then grouped by its ownerID,
+   * Use these values to update the fileSizeContained attribute of a user
+   */
+  private async calculateExpiredFileSizes(
+    currentDateTime: Date,
+  ): Promise<Array<file & { totalBytes: number }>> {
+    try {
+      console.log("Retrieving expired files");
+      const results: Array<file & { totalBytes: number }> = await this.db.exec(
+        `SELECT  ownerID, SUM(OCTET_LENGTH(fileBuffer)) as totalBytes FROM file GROUP BY ownerID`,
+        [currentDateTime],
+      );
+      if (results.length == 0) {
+        console.log("No expired files");
+        return results;
+      }
+      console.log("retrieved %d expired files", results.length);
+      return results;
+    } catch (err) {
+      const error = err as Error;
+      console.error(error);
+      throw new Error(error.message);
+      return [];
+    }
+  }
 }

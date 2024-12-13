@@ -30,6 +30,7 @@ router.post(
       const user = await users.updateUserSession(sid, (userState) => ({
         fileSizeContained: userState.fileSizeContained + deflateFile.byteLength,
       }));
+
       console.log("File uploaded", req.file.originalname);
       res.status(201).send(`File uploaded by ${sid}`);
     } catch (err) {
@@ -42,8 +43,9 @@ router.get(
   "/dl/:fileID",
   async (req: Request, res: Response, next: NextFunction) => {
     console.log(req.params.fileID);
+    const files: Files = dr.getService("Files");
+    const users: Users = dr.getService("Users");
     try {
-      const files: Files = dr.getService("Files");
       const queriedFile: file = await files.getFile(req.params.fileID.trim());
       const decompressFile = await compression.decompress(
         queriedFile.fileBuffer,
@@ -55,10 +57,12 @@ router.get(
         `attachment; filename="${parseFile.originalname}"`,
       );
       res.setHeader("Content-Length", `${parseFile.size}`);
-      console.log(parseFile.buffer.data);
-      res.send(parseFile.buffer.data);
+      res.send("sent");
     } catch (err) {
-      next(err);
+      // show a page where it says file is either expired and does not exist anymore
+      console.log("File does not exist");
+      //await files.removeExpiredFiles(new Date());
+      res.send("file is either expired or does not exist");
     }
   },
 );
